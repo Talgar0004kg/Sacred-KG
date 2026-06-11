@@ -308,7 +308,7 @@ textarea { resize: vertical; min-height: 80px; }
 
 <script>
 // ─── Config ──────────────────────────────────────
-const API = ''; // Auto-detect: same origin on HF Spaces
+const API = 'https://talgarbek004-sacred-kg-api.hf.space';
 let TOKEN = localStorage.getItem('sacred_admin_token') || '';
 
 // ─── Auth ────────────────────────────────────────
@@ -321,9 +321,23 @@ function showEmailLogin() {
 async function login() {
   const t = document.getElementById('adminToken').value;
   if (!t) return toast('Введите токен');
-  TOKEN = t;
-  localStorage.setItem('sacred_admin_token', t);
-  await checkAuth();
+
+  // Проверка через БД (безопасно)
+  try {
+    const r = await fetch(API+'/admin/verify-token', {
+      headers: {'x-admin-token': t}
+    });
+    const d = await r.json();
+    if (!d.valid) return toast(d.reason || 'Недействительный токен');
+
+    TOKEN = t;
+    localStorage.setItem('sacred_admin_token', t);
+    showApp();
+    loadAll();
+    if (d.use_count) toast('✅ Вход выполнен · токен: ' + d.label);
+  } catch(e) {
+    toast('Сервер недоступен. Проверьте подключение.');
+  }
 }
 
 async function loginEmail() {
@@ -345,13 +359,19 @@ async function loginEmail() {
 }
 
 async function checkAuth() {
+  // Проверка токена через БД (защищённый эндпоинт)
   try {
-    const r = await fetch(API+'/admin/places', {
-      headers: {'Authorization': 'Bearer '+TOKEN, 'x-admin-token': TOKEN}
+    const r = await fetch(API+'/admin/verify-token', {
+      headers: {'x-admin-token': TOKEN}
     });
-    if (r.ok) { showApp(); loadAll(); }
-    else { TOKEN = ''; localStorage.removeItem('sacred_admin_token'); }
-  } catch(e) { /* server offline */ }
+    const d = await r.json();
+    if (d.valid) { showApp(); loadAll(); }
+    else {
+      TOKEN = '';
+      localStorage.removeItem('sacred_admin_token');
+      toast(d.reason || 'Токен недействителен');
+    }
+  } catch(e) { /* сервер офлайн — остаёмся на странице входа */ }
 }
 
 function showApp() {

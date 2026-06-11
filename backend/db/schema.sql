@@ -11,8 +11,8 @@ CREATE TABLE places (
     description_ru TEXT,
     description_kg TEXT,
     description_en TEXT,
-    region TEXT NOT NULL,          -- batken, chuy, issyk_kul, jalal_abad, naryn, osh, talas
-    category TEXT DEFAULT 'sacred', -- sacred, petroglyph, spring, route
+    region TEXT NOT NULL,
+    category TEXT DEFAULT 'sacred',
     latitude DOUBLE PRECISION,
     longitude DOUBLE PRECISION,
     image_url TEXT,
@@ -34,7 +34,7 @@ CREATE TABLE users (
     email TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     name TEXT,
-    role TEXT DEFAULT 'user',     -- user, admin
+    role TEXT DEFAULT 'user',
     avatar_url TEXT,
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMPTZ DEFAULT NOW()
@@ -56,7 +56,7 @@ CREATE TABLE bookings (
     place_id UUID REFERENCES places(id) ON DELETE CASCADE,
     visit_date DATE NOT NULL,
     guests INTEGER DEFAULT 1,
-    status TEXT DEFAULT 'pending', -- pending, confirmed, cancelled
+    status TEXT DEFAULT 'pending',
     notes TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -88,24 +88,37 @@ CREATE TABLE community_posts (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 7. AI-ЧАТ (история диалогов с DeepSeek)
+-- 7. AI-ЧАТ
 CREATE TABLE ai_chats (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
     place_id UUID REFERENCES places(id) ON DELETE SET NULL,
-    character_mode TEXT DEFAULT 'atashka', -- atashka, apashka
+    character_mode TEXT DEFAULT 'atashka',
     message TEXT NOT NULL,
     response TEXT NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 8. НАСТРОЙКИ AI-ГИДА (административные)
+-- 8. НАСТРОЙКИ AI
 CREATE TABLE ai_config (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     key TEXT UNIQUE NOT NULL,
     value TEXT NOT NULL,
     description TEXT,
     updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 9. ТОКЕНЫ АДМИНИСТРАТОРА (БЕЗОПАСНОСТЬ В БД)
+CREATE TABLE admin_tokens (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    token_hash TEXT UNIQUE NOT NULL,          -- SHA-256 от токена
+    label TEXT,                                -- «Токен Сэра», «Модератор»
+    created_by TEXT,                           -- email создателя
+    is_active BOOLEAN DEFAULT true,            -- отозван = false
+    expires_at TIMESTAMPTZ,                    -- NULL = бессрочный
+    last_used_at TIMESTAMPTZ,
+    use_count INTEGER DEFAULT 0,               -- аудит
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Индексы
@@ -115,10 +128,12 @@ CREATE INDEX idx_places_active ON places(is_active);
 CREATE INDEX idx_bookings_user ON bookings(user_id);
 CREATE INDEX idx_reviews_place ON reviews(place_id);
 CREATE INDEX idx_favorites_user ON favorites(user_id);
+CREATE INDEX idx_admin_tokens_hash ON admin_tokens(token_hash);
+CREATE INDEX idx_admin_tokens_active ON admin_tokens(is_active);
 
--- Заполнение начальных настроек AI
+-- AI конфиг
 INSERT INTO ai_config (key, value, description) VALUES
     ('ai_model', 'deepseek-chat', 'Модель DeepSeek для AI-гида'),
     ('ai_temperature', '0.7', 'Температура генерации'),
-    ('atashka_prompt', 'Ты Аташка — хранитель истории Кыргызстана. Рассказывай о сакральных местах с мудростью старца. Используй легенды, эпос Манас, народные сказания. Говори как аксакал.', 'Системный промпт для режима Аташка'),
-    ('apashka_prompt', 'Ты Апашка — традиционный гид Кыргызстана. Рассказывай о местах тепло и душевно, как бабушка у очага. Делись народными традициями, рецептами, обычаями. Говори ласково.', 'Системный промпт для режима Апашка');
+    ('atashka_prompt', 'Ты Аташка — хранитель истории Кыргызстана. Рассказывай о сакральных местах с мудростью старца. Используй легенды, эпос Манас, народные сказания. Говори как аксакал.', 'Системный промпт Аташка'),
+    ('apashka_prompt', 'Ты Апашка — традиционный гид Кыргызстана. Рассказывай о местах тепло и душевно, как бабушка у очага. Делись народными традициями, рецептами, обычаями. Говори ласково.', 'Системный промпт Апашка');
