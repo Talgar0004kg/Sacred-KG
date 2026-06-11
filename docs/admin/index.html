@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sacred KG — Административная панель</title>
+<style>
+:root {
+  --bg: #0d0f13;
+  --surface: #161a22;
+  --border: #252a36;
+  --gold: #d4a853;
+  --gold-dim: #8b7335;
+  --text: #e0ddd5;
+  --muted: #6b6f7b;
+  --red: #c0392b;
+  --green: #27ae60;
+  --blue: #2e86c1;
+  --radius: 8px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box }
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--bg); color: var(--text);
+  display: flex; min-height: 100vh;
+}
+
+/* Sidebar */
+nav {
+  width: 260px; background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 24px 0;
+  position: sticky; top: 0; height: 100vh;
+  overflow-y: auto;
+}
+nav .logo {
+  padding: 0 24px 20px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+nav .logo h1 {
+  font-size: 18px; font-weight: 700;
+  background: linear-gradient(135deg, var(--gold), #f0d78c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+nav .logo span { font-size: 11px; color: var(--muted); }
+nav a {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 24px; color: var(--muted);
+  text-decoration: none; font-size: 14px;
+  transition: all .15s; border-left: 2px solid transparent;
+}
+nav a:hover, nav a.active {
+  color: var(--gold); background: rgba(212,168,83,.06);
+  border-left-color: var(--gold);
+}
+
+/* Main */
+main { flex: 1; padding: 32px; max-width: 1400px; }
+.header { margin-bottom: 28px; }
+.header h2 { font-size: 22px; font-weight: 600; }
+.header p { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+/* Cards */
+.stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap: 14px; margin-bottom: 28px; }
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 18px;
+}
+.stat-card .num { font-size: 28px; font-weight: 700; color: var(--gold); }
+.stat-card .label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+/* Tables */
+table {
+  width: 100%; border-collapse: collapse;
+  background: var(--surface); border-radius: var(--radius);
+  overflow: hidden; border: 1px solid var(--border);
+}
+th {
+  text-align: left; padding: 12px 16px;
+  font-size: 11px; font-weight: 600; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .5px;
+  background: rgba(0,0,0,.2);
+}
+td { padding: 10px 16px; font-size: 13px; border-top: 1px solid var(--border); }
+tr:hover td { background: rgba(212,168,83,.04); }
+
+/* Buttons */
+.btn {
+  padding: 8px 16px; border-radius: 6px; border: none;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: all .15s;
+}
+.btn-gold { background: var(--gold); color: #0d0f13; }
+.btn-gold:hover { background: #e0b85e; }
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+.btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+.btn-sm { padding: 5px 12px; font-size: 11px; }
+.btn-danger { background: transparent; border: 1px solid var(--red); color: var(--red); }
+.btn-danger:hover { background: var(--red); color: white; }
+.btn-success { background: var(--green); color: white; }
+
+/* Forms */
+.form-group { margin-bottom: 14px; }
+label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+input, textarea, select {
+  width: 100%; padding: 9px 12px;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 6px; color: var(--text); font-size: 13px;
+  font-family: inherit;
+}
+input:focus, textarea:focus, select:focus {
+  outline: none; border-color: var(--gold);
+}
+textarea { resize: vertical; min-height: 80px; }
+
+/* Badges */
+.badge {
+  display: inline-block; padding: 3px 10px;
+  border-radius: 12px; font-size: 11px; font-weight: 600;
+}
+.badge-high { background: rgba(192,57,43,.15); color: var(--red); }
+.badge-medium { background: rgba(212,168,83,.15); color: var(--gold); }
+.badge-green { background: rgba(39,174,96,.15); color: var(--green); }
+.badge-blue { background: rgba(46,134,193,.15); color: var(--blue); }
+
+/* Modal */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.7); z-index: 1000;
+  align-items: center; justify-content: center;
+}
+.modal-overlay.active { display: flex; }
+.modal {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 28px;
+  width: 600px; max-height: 85vh; overflow-y: auto;
+}
+.modal h3 { margin-bottom: 18px; color: var(--gold); }
+
+/* Tabs */
+.tabs { display: flex; gap: 0; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
+.tab {
+  padding: 10px 20px; font-size: 13px; background: none; border: none;
+  color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent;
+}
+.tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+/* Toast */
+.toast {
+  position: fixed; bottom: 24px; right: 24px;
+  background: var(--surface); border: 1px solid var(--border);
+  padding: 14px 20px; border-radius: var(--radius);
+  font-size: 13px; z-index: 2000;
+  transform: translateY(100px); opacity: 0; transition: all .3s;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+
+/* Auth */
+.login-screen {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 100vh;
+}
+.login-box {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 36px; width: 400px;
+}
+.login-box h2 { text-align: center; margin-bottom: 24px; color: var(--gold); }
+
+.section { display: none; }
+.section.active { display: block; }
+
+@media (max-width: 768px) {
+  body { flex-direction: column; }
+  nav { width: 100%; height: auto; position: static; padding: 12px 0; }
+  nav a { padding: 8px 16px; }
+  main { padding: 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Auth -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <h2>⚜️ Sacred KG</h2>
+    <div class="form-group">
+      <label>Admin Token</label>
+      <input type="password" id="adminToken" placeholder="Введите токен администратора">
+    </div>
+    <button class="btn btn-gold" style="width:100%" onclick="login()">Войти</button>
+    <p style="text-align:center;margin-top:12px;color:var(--muted);font-size:12px">
+      Или <a href="#" style="color:var(--gold)" onclick="showEmailLogin()">войти по email</a>
+    </p>
+    <div id="emailLogin" style="display:none;margin-top:12px">
+      <div class="form-group"><label>Email</label><input type="email" id="loginEmail"></div>
+      <div class="form-group"><label>Пароль</label><input type="password" id="loginPassword"></div>
+      <button class="btn btn-gold" style="width:100%" onclick="loginEmail()">Войти</button>
+    </div>
+  </div>
+</div>
+
+<!-- App -->
+<div id="app" style="display:none">
+<nav>
+  <div class="logo">
+    <h1>⚜️ Sacred KG</h1>
+    <span>Административная панель</span>
+  </div>
+  <a href="#" class="active" onclick="showSection('dashboard');return!1">📊 Дашборд</a>
+  <a href="#" onclick="showSection('places');return!1">🏛️ Места</a>
+  <a href="#" onclick="showSection('bookings');return!1">📅 Бронирования</a>
+  <a href="#" onclick="showSection('reviews');return!1">⭐ Отзывы</a>
+  <a href="#" onclick="showSection('posts');return!1">📝 Посты</a>
+  <a href="#" onclick="showSection('users');return!1">👥 Пользователи</a>
+  <a href="#" onclick="showSection('aiConfig');return!1">🤖 AI Конфиг</a>
+  <a href="#" onclick="logout();return!1" style="margin-top:auto;color:var(--red)">🚪 Выход</a>
+</nav>
+
+<main>
+  <div class="section active" id="dashboard">
+    <div class="header"><h2>Дашборд</h2><p>Обзор системы Sacred KG</p></div>
+    <div class="stats" id="statCards"></div>
+  </div>
+
+  <div class="section" id="places">
+    <div class="header">
+      <h2>🏛️ Сакральные места</h2>
+      <p>Управление каталогом мест</p>
+    </div>
+    <div style="margin-bottom:16px">
+      <button class="btn btn-gold" onclick="openPlaceModal()">+ Добавить место</button>
+      <select id="regionFilter" style="width:200px;display:inline;margin-left:12px" onchange="loadPlaces()">
+        <option value="">Все регионы</option>
+        <option value="batken">Баткен</option><option value="chuy">Чуй</option>
+        <option value="issyk_kul">Иссык-Куль</option><option value="jalal_abad">Джалал-Абад</option>
+        <option value="naryn">Нарын</option><option value="osh">Ош</option><option value="talas">Талас</option>
+      </select>
+    </div>
+    <div id="placesTable"></div>
+  </div>
+
+  <div class="section" id="bookings">
+    <div class="header"><h2>📅 Бронирования</h2><p>Управление заявками на посещение</p></div>
+    <div id="bookingsTable"></div>
+  </div>
+
+  <div class="section" id="reviews">
+    <div class="header"><h2>⭐ Отзывы</h2><p>Модерация отзывов</p></div>
+    <div id="reviewsTable"></div>
+  </div>
+
+  <div class="section" id="posts">
+    <div class="header"><h2>📝 Посты сообщества</h2><p>Модерация публикаций</p></div>
+    <div id="postsTable"></div>
+  </div>
+
+  <div class="section" id="users">
+    <div class="header"><h2>👥 Пользователи</h2><p>Управление пользователями</p></div>
+    <div id="usersTable"></div>
+  </div>
+
+  <div class="section" id="aiConfig">
+    <div class="header"><h2>🤖 AI Конфигурация</h2><p>Настройка DeepSeek AI-гида</p></div>
+    <div id="aiConfigContent"></div>
+  </div>
+</main>
+</div>
+
+<!-- Place Modal -->
+<div class="modal-overlay" id="placeModal">
+  <div class="modal">
+    <h3 id="placeModalTitle">Новое место</h3>
+    <input type="hidden" id="placeId">
+    <div class="form-group"><label>Название (RU) *</label><input id="ptitle_ru"></div>
+    <div class="form-group"><label>Название (KG)</label><input id="ptitle_kg"></div>
+    <div class="form-group"><label>Название (EN)</label><input id="ptitle_en"></div>
+    <div class="form-group"><label>Описание (RU)</label><textarea id="pdesc_ru"></textarea></div>
+    <div class="form-group"><label>Регион *</label>
+      <select id="pregion">
+        <option value="batken">Баткен</option><option value="chuy">Чуй</option>
+        <option value="issyk_kul">Иссык-Куль</option><option value="jalal_abad">Джалал-Абад</option>
+        <option value="naryn">Нарын</option><option value="osh">Ош</option><option value="talas">Талас</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Категория</label>
+      <select id="pcategory">
+        <option value="sacred">Сакральное</option><option value="petroglyph">Петроглифы</option>
+        <option value="spring">Источник</option><option value="route">Маршрут</option>
+      </select>
+    </div>
+    <div class="form-group"><label>URL изображения</label><input id="pimage_url"></div>
+    <div class="form-group"><label>Широта</label><input type="number" step="any" id="platitude"></div>
+    <div class="form-group"><label>Долгота</label><input type="number" step="any" id="plongitude"></div>
+    <div class="form-group" style="display:flex;align-items:center;gap:8px">
+      <input type="checkbox" id="pis_featured"><label style="margin:0">Featured</label>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px">
+      <button class="btn btn-gold" onclick="savePlace()">Сохранить</button>
+      <button class="btn btn-outline" onclick="closeModal('placeModal')">Отмена</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── Config ──────────────────────────────────────
+const API = ''; // Auto-detect: same origin on HF Spaces
+let TOKEN = localStorage.getItem('sacred_admin_token') || '';
+
+// ─── Auth ────────────────────────────────────────
+if (TOKEN) { checkAuth(); }
+
+function showEmailLogin() {
+  document.getElementById('emailLogin').style.display = 'block';
+}
+
+async function login() {
+  const t = document.getElementById('adminToken').value;
+  if (!t) return toast('Введите токен');
+  TOKEN = t;
+  localStorage.setItem('sacred_admin_token', t);
+  await checkAuth();
+}
+
+async function loginEmail() {
+  const email = document.getElementById('loginEmail').value;
+  const password = document.getElementById('loginPassword').value;
+  try {
+    const r = await fetch(API+'/api/auth/login', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({email, password})
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail||'Ошибка');
+    if (d.user.role !== 'admin') throw new Error('Не администратор');
+    TOKEN = d.token;
+    localStorage.setItem('sacred_admin_token', TOKEN);
+    showApp();
+    loadAll();
+  } catch(e) { toast(e.message); }
+}
+
+async function checkAuth() {
+  try {
+    const r = await fetch(API+'/admin/places', {
+      headers: {'Authorization': 'Bearer '+TOKEN, 'x-admin-token': TOKEN}
+    });
+    if (r.ok) { showApp(); loadAll(); }
+    else { TOKEN = ''; localStorage.removeItem('sacred_admin_token'); }
+  } catch(e) { /* server offline */ }
+}
+
+function showApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+}
+
+function logout() {
+  TOKEN = '';
+  localStorage.removeItem('sacred_admin_token');
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+
+// ─── Navigation ──────────────────────────────────
+function showSection(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById(name).classList.add('active');
+  document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+// ─── Loaders ─────────────────────────────────────
+async function api(path, opts={}) {
+  const hdrs = {...opts.headers, 'Authorization':'Bearer '+TOKEN, 'x-admin-token': TOKEN};
+  if (opts.body && typeof opts.body === 'object') {
+    hdrs['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(opts.body);
+  }
+  const r = await fetch(API+path, {...opts, headers:hdrs});
+  if (r.status === 403) { logout(); throw new Error('Сессия истекла'); }
+  if (!r.ok) {
+    const d = await r.json().catch(()=>({}));
+    throw new Error(d.detail || 'Ошибка сервера');
+  }
+  return r.json();
+}
+
+async function loadAll() {
+  await Promise.all([loadStats(), loadPlaces(), loadBookings(), loadReviews(), loadPosts(), loadUsers(), loadAiConfig()]);
+}
+
+async function loadStats() {
+  const [places, bookings, users] = await Promise.all([
+    api('/admin/places'), api('/admin/bookings'), api('/admin/users')
+  ]);
+  document.getElementById('statCards').innerHTML = `
+    <div class="stat-card"><div class="num">${places.length}</div><div class="label">Мест</div></div>
+    <div class="stat-card"><div class="num">${bookings.length}</div><div class="label">Бронирований</div></div>
+    <div class="stat-card"><div class="num">${users.length}</div><div class="label">Пользователей</div></div>
+    <div class="stat-card"><div class="num">${places.filter(p=>p.is_featured).length}</div><div class="label">Featured</div></div>
+  `;
+}
+
+async function loadPlaces() {
+  const region = document.getElementById('regionFilter')?.value || '';
+  const places = await api('/admin/places' + (region ? '?region='+region : ''));
+  const html = `<table><thead><tr>
+    <th>Название</th><th>Регион</th><th>Категория</th><th>Статус</th><th style="width:140px">Действия</th>
+  </tr></thead><tbody>` +
+  places.map(p => `<tr>
+    <td><strong>${esc(p.title_ru)}</strong>${p.is_featured?' <span class="badge badge-gold">★</span>':''}</td>
+    <td>${esc(p.region)}</td>
+    <td><span class="badge badge-blue">${esc(p.category)}</span></td>
+    <td><span class="badge ${p.is_active?'badge-green':'badge-high'}">${p.is_active?'Активно':'Скрыто'}</span></td>
+    <td>
+      <button class="btn btn-outline btn-sm" onclick="editPlace('${p.id}')">✏️</button>
+      <button class="btn btn-danger btn-sm" onclick="deletePlace('${p.id}')">🗑️</button>
+    </td>
+  </tr>`).join('') + `</tbody></table>`;
+  document.getElementById('placesTable').innerHTML = html;
+}
+
+async function loadBookings() {
+  const bookings = await api('/admin/bookings');
+  const html = `<table><thead><tr>
+    <th>Место</th><th>Пользователь</th><th>Дата</th><th>Гостей</th><th>Статус</th><th>Действия</th>
+  </tr></thead><tbody>` +
+  bookings.map(b => `<tr>
+    <td>${esc(b.places?.title_ru || b.place_id)}</td>
+    <td>${esc(b.users?.name || b.user_id)}</td>
+    <td>${b.visit_date}</td><td>${b.guests}</td>
+    <td><span class="badge ${b.status==='confirmed'?'badge-green':b.status==='cancelled'?'badge-high':'badge-medium'}">${b.status}</span></td>
+    <td>
+      <button class="btn btn-success btn-sm" onclick="setBookingStatus('${b.id}','confirmed')">✓</button>
+      <button class="btn btn-danger btn-sm" onclick="setBookingStatus('${b.id}','cancelled')">✕</button>
+    </td>
+  </tr>`).join('') + `</tbody></table>`;
+  document.getElementById('bookingsTable').innerHTML = html || '<p style="color:var(--muted)">Нет бронирований</p>';
+}
+
+async function loadReviews() {
+  const reviews = await api('/admin/reviews');
+  const html = reviews.length ? `<table><thead><tr>
+    <th>Место</th><th>Пользователь</th><th>Рейтинг</th><th>Комментарий</th><th>Действия</th>
+  </tr></thead><tbody>` +
+  reviews.map(r => `<tr>
+    <td>${esc(r.places?.title_ru||'')}</td><td>${esc(r.users?.name||'')}</td>
+    <td>${'⭐'.repeat(r.rating)}</td>
+    <td>${esc(r.comment_ru||'')}</td>
+    <td>${r.is_approved ? '<span class="badge badge-green">Одобрен</span>' : `<button class="btn btn-success btn-sm" onclick="approveReview('${r.id}')">Одобрить</button>`}</td>
+  </tr>`).join('') + `</tbody></table>` : '<p style="color:var(--muted)">Нет отзывов</p>';
+  document.getElementById('reviewsTable').innerHTML = html;
+}
+
+async function loadPosts() {
+  const posts = await api('/admin/posts');
+  const html = posts.length ? `<table><thead><tr>
+    <th>Заголовок</th><th>Автор</th><th>Дата</th><th>Действия</th>
+  </tr></thead><tbody>` +
+  posts.map(p => `<tr>
+    <td><strong>${esc(p.title)}</strong></td>
+    <td>${esc(p.users?.name||'')}</td>
+    <td>${new Date(p.created_at).toLocaleDateString('ru')}</td>
+    <td>${p.is_approved ? '<span class="badge badge-green">Одобрен</span>' : `<button class="btn btn-success btn-sm" onclick="approvePost('${p.id}')">Одобрить</button>`}</td>
+  </tr>`).join('') + `</tbody></table>` : '<p style="color:var(--muted)">Нет постов</p>';
+  document.getElementById('postsTable').innerHTML = html;
+}
+
+async function loadUsers() {
+  const users = await api('/admin/users');
+  const html = `<table><thead><tr>
+    <th>Имя</th><th>Email</th><th>Роль</th><th>Статус</th><th>Действия</th>
+  </tr></thead><tbody>` +
+  users.map(u => `<tr>
+    <td>${esc(u.name)}</td><td>${esc(u.email)}</td>
+    <td><span class="badge ${u.role==='admin'?'badge-gold':'badge-blue'}">${u.role}</span></td>
+    <td><span class="badge ${u.is_active?'badge-green':'badge-high'}">${u.is_active?'Активен':'Заблокирован'}</span></td>
+    <td>
+      <button class="btn btn-outline btn-sm" onclick="setUserRole('${u.id}','${u.role==='admin'?'user':'admin'}')">${u.role==='admin'?'⤓ User':'⤒ Admin'}</button>
+    </td>
+  </tr>`).join('') + `</tbody></table>`;
+  document.getElementById('usersTable').innerHTML = html;
+}
+
+async function loadAiConfig() {
+  const configs = await api('/admin/ai-config');
+  const html = configs.map(c => `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px">
+    <div style="font-size:11px;color:var(--muted);text-transform:uppercase">${esc(c.key)}</div>
+    <div style="font-weight:600;margin:4px 0">${esc(c.description||'')}</div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <input id="cfg_${c.key}" value="${esc(c.value)}" style="flex:1">
+      <button class="btn btn-gold btn-sm" onclick="updateAiConfig('${c.key}')">Сохранить</button>
+    </div>
+  </div>`).join('');
+  document.getElementById('aiConfigContent').innerHTML = html;
+}
+
+// ─── Actions ─────────────────────────────────────
+async function savePlace() {
+  const id = document.getElementById('placeId').value;
+  const data = {
+    title_ru: document.getElementById('ptitle_ru').value,
+    title_kg: document.getElementById('ptitle_kg').value,
+    title_en: document.getElementById('ptitle_en').value,
+    description_ru: document.getElementById('pdesc_ru').value,
+    region: document.getElementById('pregion').value,
+    category: document.getElementById('pcategory').value,
+    image_url: document.getElementById('pimage_url').value,
+    latitude: parseFloat(document.getElementById('platitude').value)||null,
+    longitude: parseFloat(document.getElementById('plongitude').value)||null,
+    is_featured: document.getElementById('pis_featured').checked,
+  };
+  if (!data.title_ru || !data.region) return toast('Название и регион обязательны');
+  try {
+    if (id) { await api('/admin/places/'+id, {method:'PUT',body:data}); }
+    else { await api('/admin/places', {method:'POST',body:data}); }
+    closeModal('placeModal');
+    loadPlaces(); loadStats();
+    toast(id ? 'Место обновлено' : 'Место создано');
+  } catch(e) { toast(e.message); }
+}
+
+function openPlaceModal() {
+  document.getElementById('placeModalTitle').textContent = 'Новое место';
+  ['placeId','ptitle_ru','ptitle_kg','ptitle_en','pdesc_ru','pimage_url','platitude','plongitude'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('pis_featured').checked = false;
+  document.getElementById('placeModal').classList.add('active');
+}
+
+async function editPlace(id) {
+  const places = await api('/admin/places');
+  const p = places.find(x=>x.id===id);
+  if (!p) return;
+  document.getElementById('placeModalTitle').textContent = 'Редактировать: '+p.title_ru;
+  document.getElementById('placeId').value = p.id;
+  document.getElementById('ptitle_ru').value = p.title_ru||'';
+  document.getElementById('ptitle_kg').value = p.title_kg||'';
+  document.getElementById('ptitle_en').value = p.title_en||'';
+  document.getElementById('pdesc_ru').value = p.description_ru||'';
+  document.getElementById('pregion').value = p.region;
+  document.getElementById('pcategory').value = p.category;
+  document.getElementById('pimage_url').value = p.image_url||'';
+  document.getElementById('platitude').value = p.latitude||'';
+  document.getElementById('plongitude').value = p.longitude||'';
+  document.getElementById('pis_featured').checked = p.is_featured;
+  document.getElementById('placeModal').classList.add('active');
+}
+
+async function deletePlace(id) {
+  if (!confirm('Удалить место?')) return;
+  await api('/admin/places/'+id, {method:'DELETE'});
+  loadPlaces(); loadStats();
+  toast('Место удалено');
+}
+
+async function setBookingStatus(id, status) {
+  await api('/admin/bookings/'+id+'/status?status='+status, {method:'PUT'});
+  loadBookings();
+  toast('Статус обновлён');
+}
+
+async function approveReview(id) {
+  await api('/admin/reviews/'+id+'/approve', {method:'PUT'});
+  loadReviews();
+  toast('Отзыв одобрен');
+}
+
+async function approvePost(id) {
+  await api('/admin/posts/'+id+'/approve', {method:'PUT'});
+  loadPosts();
+  toast('Пост одобрен');
+}
+
+async function setUserRole(id, role) {
+  await api('/admin/users/'+id+'/role?role='+role, {method:'PUT'});
+  loadUsers();
+  toast('Роль изменена');
+}
+
+async function updateAiConfig(key) {
+  const value = document.getElementById('cfg_'+key).value;
+  await api('/admin/ai-config', {method:'PUT', body:{key, value}});
+  toast('Конфиг AI обновлён');
+}
+
+// ─── Helpers ─────────────────────────────────────
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+function esc(s) { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
