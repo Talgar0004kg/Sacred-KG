@@ -1,4 +1,4 @@
-# Sacred KG Backend
+# Sacred KG Backend v2.1
 # FastAPI + Supabase + DeepSeek AI
 
 fastapi==0.115.6
@@ -10,4 +10,3 @@ python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 python-multipart==0.0.19
 python-dotenv==1.0.1
-cors==0.0.6  # actually, use fastapi.middleware.cors
