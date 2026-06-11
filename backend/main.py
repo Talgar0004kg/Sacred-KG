@@ -32,11 +32,19 @@ DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 JWT_SECRET = os.getenv("JWT_SECRET", "sacred-kg-secret-change-me")
 
 if not SUPABASE_URL or not SUPABASE_KEY:
-    raise RuntimeError("SUPABASE_URL and SUPABASE_KEY must be set")
+    print("⚠️  WARNING: SUPABASE_URL and SUPABASE_KEY not set. DB features disabled.")
+    supabase = None
+else:
+    try:
+        supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+    except Exception as e:
+        print(f"⚠️  WARNING: Supabase connection failed: {e}. DB features disabled.")
+        supabase = None
 
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-# ─── App ──────────────────────────────────────────
+def get_db() -> Client:
+    """Dependency: возвращает Supabase клиент или 503."""
+    if supabase is None:
+        raise HTTPException(status_code=503, detail="База данных не подключена. Настройте SUPABASE_URL и SUPABASE_KEY.")
 app = FastAPI(title="Sacred KG API", version="2.1.0")
 
 app.add_middleware(
